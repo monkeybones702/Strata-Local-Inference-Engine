@@ -1,0 +1,22 @@
+services:
+  strata-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: strata-engine
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./weights:/app/weights:ro
+      - ./cache/moe_nvme:/app/cache/moe_nvme:rw
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True

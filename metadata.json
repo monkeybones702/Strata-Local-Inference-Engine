@@ -1,0 +1,6 @@
+{
+  "name": "Strata Engine",
+  "description": "Local MoE Inference Engine Architecture and API Gateway",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

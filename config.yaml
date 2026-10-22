@@ -1,0 +1,49 @@
+# ==============================================================================
+# Strata Engine Configuration
+# Optimized for Fine-Grained Mixture-of-Experts (MoE) on Consumer GPUs
+# ==============================================================================
+
+model:
+  name: "Qwen3.8-Flash-Next-125B-MoE"
+  alias: "strata-moe-default"
+  model_dir: "./weights/qwen3.8-flash-next"
+  format: "q4_k_m"                  # Quantization target: q4_k_m, fp8_e4m3, or exl2
+  total_experts: 24576              # Fine-grained sparse MoE total experts
+  experts_per_token: 10             # Active experts routed per token (top-k)
+  hidden_size: 4096
+  num_layers: 48
+  max_context_length: 32768
+
+hardware:
+  gpu_id: 0
+  vram_budget_gb: 14.5              # Target: 16GB VRAM (leaves ~1.5GB for OS/display)
+  host_ram_budget_gb: 48.0          # Target: 64GB DDR4/DDR5 system memory
+  nvme_cache_dir: "./cache/moe_nvme" # NVMe mount point for direct cold-expert mmap
+  use_pinned_memory: true           # cudaHostAlloc pinned memory for zero-copy DMA
+  async_transfer_streams: 2         # Overlap token compute with next-token expert fetch
+  nvme_direct_io: true              # Bypass OS filesystem cache to prevent RAM exhaustion
+
+kv_cache:
+  quantization: "fp8"               # FP8 enabled for high-context memory efficiency
+  page_size: 16                     # PagedAttention block size in tokens
+  max_pages_vram: 2048              # Maximum KV blocks held directly on GPU
+
+monitoring:
+  prometheus_enabled: true
+  metrics_port: 8001
+
+cache_policy:
+  hot_experts_vram: 128             # Top frequently accessed experts permanently in VRAM
+  warm_experts_ram: 2048            # High-velocity experts cached in pinned Host RAM
+  eviction_strategy: "lru_frequency_hybrid" # Combined least-recently and least-frequently used
+  prefetch_lookahead_steps: 2       # Predictive layer/token prefetch window
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1
+  cors_allowed_origins: ["*"]
+  request_timeout_seconds: 120
+  enable_openai_api: true
+  enable_anthropic_api: true
+  enable_multimodal_vision: true
